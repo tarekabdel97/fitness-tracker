@@ -1127,6 +1127,86 @@ svg {
   const toast = root.querySelector("#ftp-toast");
   let toastTimer = null;
 
+  function normalizeText(value) {
+    return String(value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9#]+/g, " ")
+      .trim();
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function parseNumber(value) {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    const match = String(value ?? "").replace(/,/g, ".").match(/-?\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : null;
+  }
+
+  function positiveInteger(value, fallback = 1) {
+    const number = parseNumber(value);
+    if (!Number.isFinite(number) || number < 1) return fallback;
+    return Math.max(1, Math.round(number));
+  }
+
+  function hashString(value) {
+    let hash = 2166136261;
+    const text = String(value);
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  function exerciseId(row) {
+    return `ex-${hashString([row.session, row.order, row.exercise].map(normalizeText).join("|"))}`;
+  }
+
+  function programId(rows, maxWeek) {
+    const seen = new Set();
+    const signature = [];
+    rows
+      .filter((row) => Number(row.week) === 1 || !rows.some((item) => Number(item.week) === 1))
+      .forEach((row) => {
+        const key = [row.day, row.session, row.order, row.exercise].map(normalizeText).join("|");
+        if (!seen.has(key)) {
+          seen.add(key);
+          signature.push(key);
+        }
+      });
+    return `program-${hashString(`${maxWeek}|${signature.join("||")}`)}`;
+  }
+
+  function uniqueInOrder(values) {
+    const seen = new Set();
+    return values.filter((value) => {
+      const key = String(value);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function getRepRange(reps) {
+    const numbers = String(reps ?? "").match(/\d+(?:[.,]\d+)?/g)?.map((value) => Number(value.replace(",", "."))) ?? [];
+    if (!numbers.length) return { min: null, max: null };
+    return { min: numbers[0], max: numbers.length > 1 ? numbers[1] : numbers[0] };
+  }
+
+  function getRirFloor(rir) {
+    const number = parseNumber(rir);
+    return Number.isFinite(number) ? number : null;
+  }
+
   function emptyState() {
     return {
       version: 1,
