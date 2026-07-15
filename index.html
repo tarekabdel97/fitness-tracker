@@ -1,0 +1,2673 @@
+<!doctype html>
+<html lang="it" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Fitness Progress Tracker</title>
+<style>:root {
+  color-scheme: light dark;
+  background-color: transparent !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --main-surface-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
+  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
+  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: light-dark(
+    rgb(26 28 31 / 49.4%),
+    rgb(255 255 255 / 49.8%)
+  );
+  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
+  --accent-foreground: var(--primary);
+  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
+  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
+  --input: light-dark(
+    rgb(26 28 31 / 11.8%),
+    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+  );
+  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
+  --font-size-base: 14px;
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, "Segoe UI", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: 10px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 17'%3E%3Cpath d='M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z'/%3E%3C/svg%3E");
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+  --color-background-primary: var(--background);
+  --color-text-primary: var(--foreground);
+  --color-border-secondary: var(--border);
+}
+
+:root[data-visualize-standalone] {
+  background-color: var(--background) !important;
+}
+
+/* Generic mobile code-block hosts provide light/dark mode but no series palette.
+   AppBlock hosts set all six variables themselves. */
+:root:not([data-app-block-surface]) {
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(#f3883b, #f59a56);
+  --viz-series-3: light-dark(#5dc977, #74d58b);
+  --viz-series-4: light-dark(#eb77b1, #f08fc0);
+  --viz-series-5: light-dark(#9b79ec, #aa91ef);
+  --viz-series-6: light-dark(#3ab9b1, #5acbc2);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html > body {
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+:root:not([data-app-block-surface]) > body {
+  padding: 12px;
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--viz-font-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget > :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-legend,
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls > .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls > .form-label > :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type="checkbox"] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type="checkbox"]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type="checkbox"]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: "";
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type="radio"]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: "";
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed="true"],
+    [aria-selected="true"],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed="true"], [aria-selected="true"], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget > svg {
+  width: 100%;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+</style>
+</head>
+<body>
+<div id="ftp-20260715" class="ftp-root">
+  <section class="ftp-toolbar" aria-label="Controlli del tracker">
+    <label class="form-label ftp-program-field" for="ftp-program-select">
+      Programma
+      <select id="ftp-program-select" class="form-select"></select>
+    </label>
+    <div class="viz-row ftp-toolbar-actions">
+      <button id="ftp-import-button" class="btn btn-primary" type="button">
+        <i data-lucide="file-spreadsheet" aria-hidden="true"></i>
+        Importa Excel
+      </button>
+      <button id="ftp-backup-button" class="btn" type="button">
+        <i data-lucide="download" aria-hidden="true"></i>
+        Backup
+      </button>
+    </div>
+  </section>
+
+  <nav class="ftp-tabs" aria-label="Sezioni del tracker">
+    <button class="btn btn-ghost" type="button" data-view="workout" aria-selected="true">
+      <i data-lucide="dumbbell" aria-hidden="true"></i>
+      Allenamento
+    </button>
+    <button class="btn btn-ghost" type="button" data-view="progress" aria-selected="false">
+      <i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>
+      Progressi
+    </button>
+    <button class="btn btn-ghost" type="button" data-view="program" aria-selected="false">
+      <i data-lucide="list-checks" aria-hidden="true"></i>
+      Programma
+    </button>
+  </nav>
+
+  <main id="ftp-main" aria-live="polite">
+    <section class="ftp-empty">
+      <strong>Importa il tuo programma Excel per iniziare.</strong>
+      <div class="text-small">Il programma, i pesi e i progressi saranno salvati soltanto su questo dispositivo.</div>
+    </section>
+  </main>
+  <div id="ftp-toast" class="ftp-toast" role="status" aria-live="polite" hidden></div>
+
+  <input id="ftp-excel-input" class="sr-only" type="file" accept=".xlsx,.xls,.xlsm,.xlsb" aria-label="Seleziona un file Excel con il programma" />
+  <input id="ftp-restore-input" class="sr-only" type="file" accept="application/json,.json" aria-label="Seleziona un backup del tracker" />
+</div>
+
+<style>
+  #ftp-20260715 {
+    color: var(--foreground);
+    width: 100%;
+  }
+
+  #ftp-20260715 * {
+    box-sizing: border-box;
+  }
+
+  #ftp-20260715 .ftp-toolbar {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #ftp-20260715 .ftp-program-field {
+    flex: 1 1 24rem;
+    max-width: 36rem;
+    margin: 0;
+  }
+
+  #ftp-20260715 .ftp-toolbar-actions {
+    justify-content: flex-end;
+  }
+
+  #ftp-20260715 .ftp-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: 1rem 0;
+  }
+
+  #ftp-20260715 .ftp-tabs .btn[aria-selected="true"] {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  #ftp-20260715 .ftp-controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  #ftp-20260715 .ftp-week-list,
+  #ftp-20260715 .ftp-session-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  #ftp-20260715 .ftp-week-list .btn[aria-pressed="true"],
+  #ftp-20260715 .ftp-session-list .btn[aria-pressed="true"] {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  #ftp-20260715 .ftp-guidance {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .75rem;
+    align-items: start;
+    margin: 1rem 0;
+    padding: .875rem 1rem;
+    border-left: 3px solid var(--viz-series-1);
+    background: color-mix(in srgb, var(--viz-series-1) 9%, transparent);
+  }
+
+  #ftp-20260715 .ftp-guidance strong,
+  #ftp-20260715 .ftp-exercise-name,
+  #ftp-20260715 .ftp-session-title,
+  #ftp-20260715 .ftp-section-title {
+    font-weight: 500;
+  }
+
+  #ftp-20260715 .ftp-metrics {
+    margin: 1rem 0;
+  }
+
+  #ftp-20260715 .ftp-session-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  #ftp-20260715 .ftp-session-meta,
+  #ftp-20260715 .ftp-ex-meta,
+  #ftp-20260715 .ftp-previous,
+  #ftp-20260715 .ftp-inline-status {
+    color: var(--muted-foreground);
+  }
+
+  #ftp-20260715 .ftp-exercise {
+    padding: 1.125rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #ftp-20260715 .ftp-exercise-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: .875rem;
+    align-items: start;
+  }
+
+  #ftp-20260715 .ftp-exercise-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    border-radius: 999px;
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    font-weight: 500;
+  }
+
+  #ftp-20260715 .ftp-ex-meta,
+  #ftp-20260715 .ftp-previous,
+  #ftp-20260715 .ftp-details,
+  #ftp-20260715 .ftp-note-field {
+    margin-top: .5rem;
+  }
+
+  #ftp-20260715 .ftp-details summary {
+    cursor: pointer;
+    color: var(--foreground);
+  }
+
+  #ftp-20260715 .ftp-details-body {
+    padding: .75rem 0 0;
+    color: var(--muted-foreground);
+  }
+
+  #ftp-20260715 .ftp-sets {
+    margin-top: 1rem;
+  }
+
+  #ftp-20260715 .ftp-set-row {
+    display: grid;
+    grid-template-columns: minmax(3.5rem, .55fr) repeat(3, minmax(5.5rem, 1fr)) auto;
+    gap: .625rem;
+    align-items: end;
+    padding: .5rem 0;
+  }
+
+  #ftp-20260715 .ftp-set-row + .ftp-set-row {
+    border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  }
+
+  #ftp-20260715 .ftp-set-label {
+    align-self: center;
+    color: var(--muted-foreground);
+  }
+
+  #ftp-20260715 .ftp-set-field {
+    margin: 0;
+  }
+
+  #ftp-20260715 .ftp-set-done {
+    align-self: center;
+    margin: 0;
+  }
+
+  #ftp-20260715 .ftp-set-done .form-check-label {
+    white-space: nowrap;
+  }
+
+  #ftp-20260715 .ftp-note-field textarea {
+    min-height: 4.5rem;
+    resize: vertical;
+  }
+
+  #ftp-20260715 .ftp-session-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+
+  #ftp-20260715 .ftp-chart-section,
+  #ftp-20260715 .ftp-program-section {
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  #ftp-20260715 .ftp-chart-wrap {
+    position: relative;
+    margin-top: 1rem;
+    min-height: 16rem;
+  }
+
+  #ftp-20260715 .ftp-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--muted-foreground);
+  }
+
+  #ftp-20260715 .ftp-chart .ftp-gridline,
+  #ftp-20260715 .ftp-chart .ftp-axis {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  #ftp-20260715 .ftp-chart .ftp-line {
+    fill: none;
+    stroke: var(--viz-series-1);
+    stroke-width: 3;
+  }
+
+  #ftp-20260715 .ftp-chart .ftp-point,
+  #ftp-20260715 .ftp-chart .ftp-bar {
+    fill: var(--viz-series-1);
+  }
+
+  #ftp-20260715 .ftp-chart .ftp-label,
+  #ftp-20260715 .ftp-chart .ftp-tick {
+    fill: currentColor;
+  }
+
+  #ftp-20260715 .ftp-chart .ftp-value-label {
+    fill: var(--foreground);
+    font-weight: 500;
+  }
+
+  #ftp-20260715 .ftp-empty {
+    display: grid;
+    place-items: center;
+    min-height: 12rem;
+    padding: 2rem;
+    border: 1px dashed var(--border);
+    color: var(--muted-foreground);
+    text-align: center;
+  }
+
+  #ftp-20260715 .ftp-recommendation {
+    margin: 1rem 0;
+    padding: .875rem 1rem;
+    background: var(--accent);
+    color: var(--accent-foreground);
+    border-radius: .75rem;
+  }
+
+  #ftp-20260715 .ftp-schedule-row {
+    display: grid;
+    grid-template-columns: minmax(6rem, .8fr) minmax(7rem, 1fr) minmax(0, 2fr) auto;
+    gap: .75rem;
+    align-items: center;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #ftp-20260715 .ftp-program-exercises details {
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #ftp-20260715 .ftp-program-exercises summary {
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  #ftp-20260715 .ftp-program-exercises ul {
+    margin: .75rem 0 0;
+    padding-left: 1.25rem;
+  }
+
+  #ftp-20260715 .ftp-program-exercises li + li {
+    margin-top: .625rem;
+  }
+
+  #ftp-20260715 .ftp-data-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .625rem;
+    margin-top: 1rem;
+  }
+
+  #ftp-20260715 .ftp-toast {
+    margin-top: 1rem;
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--popover);
+    color: var(--popover-foreground);
+  }
+
+  #ftp-20260715 .ftp-import-status {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  @media (max-width: 736px) {
+    #ftp-20260715 .ftp-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    #ftp-20260715 .ftp-program-field {
+      max-width: none;
+    }
+
+    #ftp-20260715 .ftp-toolbar-actions {
+      justify-content: flex-start;
+    }
+
+    #ftp-20260715 .ftp-exercise-head {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    #ftp-20260715 .ftp-exercise-head > .btn {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+
+    #ftp-20260715 .ftp-set-row {
+      grid-template-columns: minmax(3.25rem, .5fr) repeat(2, minmax(5.5rem, 1fr));
+    }
+
+    #ftp-20260715 .ftp-set-field[data-set-field="rir"],
+    #ftp-20260715 .ftp-set-done {
+      grid-column: auto;
+    }
+
+    #ftp-20260715 .ftp-schedule-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 420px) {
+    #ftp-20260715 .ftp-tabs .btn,
+    #ftp-20260715 .ftp-week-list .btn,
+    #ftp-20260715 .ftp-session-list .btn {
+      flex: 1 1 auto;
+    }
+
+    #ftp-20260715 .ftp-set-row {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    #ftp-20260715 .ftp-set-label {
+      grid-column: 1 / -1;
+    }
+
+    #ftp-20260715 .ftp-set-done {
+      grid-column: 1 / -1;
+    }
+
+    #ftp-20260715 .ftp-schedule-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    #ftp-20260715 .ftp-line,
+    #ftp-20260715 .ftp-point,
+    #ftp-20260715 .ftp-bar {
+      transition: all 180ms ease;
+    }
+  }
+</style>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
+<script>
+(() => {
+  "use strict";
+
+  const root = document.getElementById("ftp-20260715");
+  if (!root) return;
+
+  const STORAGE_KEY = "fitness-progress-tracker-v1";
+  const main = root.querySelector("#ftp-main");
+  const programSelect = root.querySelector("#ftp-program-select");
+  const excelInput = root.querySelector("#ftp-excel-input");
+  const restoreInput = root.querySelector("#ftp-restore-input");
+  const toast = root.querySelector("#ftp-toast");
+  let toastTimer = null;
+
+  function emptyState() {
+    return {
+      version: 1,
+      activeProgramId: null,
+      programs: {},
+      logs: {},
+      ui: {},
+    };
+  }
+
+  function loadState() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (!parsed || typeof parsed !== "object") return emptyState();
+      return {
+        ...emptyState(),
+        ...parsed,
+        programs: parsed.programs && typeof parsed.programs === "object" ? parsed.programs : {},
+        logs: parsed.logs && typeof parsed.logs === "object" ? parsed.logs : {},
+        ui: parsed.ui && typeof parsed.ui === "object" ? parsed.ui : {},
+      };
+    } catch (error) {
+      return emptyState();
+    }
+  }
+
+  let state = loadState();
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return true;
+    } catch (error) {
+      showToast("Il salvataggio locale non è disponibile in questo browser.", true);
+      return false;
+    }
+  }
+
+  function activeProgram() {
+    return state.programs[state.activeProgramId] || null;
+  }
+
+  function getProgramRows(program, week = null, session = null) {
+    return (program?.rows || []).filter((row) =>
+      (week === null || Number(row.week) === Number(week)) &&
+      (session === null || row.session === session)
+    );
+  }
+
+  function getBaseRows(program) {
+    const targetWeek = (program?.rows || []).some((row) => Number(row.week) === 1)
+      ? 1
+      : Math.min(...(program?.rows || []).map((row) => Number(row.week)).filter(Number.isFinite));
+    return getProgramRows(program, targetWeek);
+  }
+
+  function ensureUi(program) {
+    if (!state.ui[program.id]) {
+      const firstWeek = Math.min(...program.rows.map((row) => Number(row.week)).filter(Number.isFinite));
+      const firstSession = getProgramRows(program, firstWeek)[0]?.session || "";
+      state.ui[program.id] = {
+        view: "workout",
+        week: Number.isFinite(firstWeek) ? firstWeek : 1,
+        session: firstSession,
+        metric: "e1rm",
+        exerciseId: getBaseRows(program)[0]?.id || "",
+      };
+    }
+    const ui = state.ui[program.id];
+    ui.week = Math.min(Math.max(1, Number(ui.week) || 1), program.maxWeek || 1);
+    const sessions = uniqueInOrder(getProgramRows(program, ui.week).map((row) => row.session));
+    if (!sessions.includes(ui.session)) ui.session = sessions[0] || "";
+    const baseIds = getBaseRows(program).map((row) => row.id);
+    if (!baseIds.includes(ui.exerciseId)) ui.exerciseId = baseIds[0] || "";
+    return ui;
+  }
+
+  function ensureProgramLogs(programId) {
+    if (!state.logs[programId]) state.logs[programId] = {};
+    return state.logs[programId];
+  }
+
+  function logKey(week, exerciseIdValue) {
+    return `${Number(week)}|${exerciseIdValue}`;
+  }
+
+  function ensureExerciseLog(program, row) {
+    const programLogs = ensureProgramLogs(program.id);
+    const key = logKey(row.week, row.id);
+    if (!programLogs[key]) {
+      programLogs[key] = {
+        sets: [],
+        note: "",
+        sourceRaw: "",
+      };
+    }
+    const log = programLogs[key];
+    const setCount = positiveInteger(row.sets, 1);
+    while (log.sets.length < setCount) {
+      log.sets.push({ kg: "", reps: "", rir: "", done: false });
+    }
+    if (log.sets.length > setCount && !log.sets.slice(setCount).some((set) => set.kg || set.reps || set.rir || set.done)) {
+      log.sets.length = setCount;
+    }
+    return log;
+  }
+
+  function applySeedLogs(program, seeds, preserveExisting = true) {
+    (seeds || []).forEach((seed) => {
+      const row = program.rows.find((item) =>
+        Number(item.week) === Number(seed.week) &&
+        (item.id === seed.exerciseId || normalizeText(item.exercise) === normalizeText(seed.exercise))
+      );
+      if (!row) return;
+      const log = ensureExerciseLog(program, row);
+      (seed.sets || []).forEach((incoming, index) => {
+        if (!log.sets[index]) return;
+        ["kg", "reps", "rir", "done"].forEach((field) => {
+          const current = log.sets[index][field];
+          const next = incoming[field];
+          const isEmpty = current === "" || current === null || current === undefined || current === false;
+          if (!preserveExisting || isEmpty) {
+            if (next !== undefined && next !== null) log.sets[index][field] = next;
+          }
+        });
+      });
+      (seed.weights || []).forEach((weight, index) => {
+        if (!log.sets[index]) return;
+        if (!preserveExisting || log.sets[index].kg === "") log.sets[index].kg = String(weight);
+      });
+      if (seed.raw && (!preserveExisting || !log.sourceRaw)) log.sourceRaw = String(seed.raw);
+      if (seed.note && (!preserveExisting || !log.note)) log.note = String(seed.note);
+    });
+  }
+
+  function initializeDefault() {
+    if (!state.activeProgramId || !state.programs[state.activeProgramId]) {
+      state.activeProgramId = Object.keys(state.programs)[0] || null;
+    }
+    if (state.activeProgramId) ensureUi(state.programs[state.activeProgramId]);
+    saveState();
+  }
+
+  function showToast(message, destructive = false) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.hidden = false;
+    toast.classList.toggle("text-destructive", Boolean(destructive));
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.hidden = true;
+      toast.classList.remove("text-destructive");
+    }, 4500);
+  }
+
+  function refreshIcons() {
+    if (window.lucide && typeof window.lucide.createIcons === "function") {
+      window.lucide.createIcons({ attrs: { width: 16, height: 16 } });
+    }
+  }
+
+  function formatNumber(value, maximumFractionDigits = 1) {
+    if (!Number.isFinite(value)) return "—";
+    return new Intl.NumberFormat("it-IT", { maximumFractionDigits }).format(value);
+  }
+
+  function setVolume(set) {
+    const kg = parseNumber(set.kg);
+    const reps = parseNumber(set.reps);
+    return Number.isFinite(kg) && Number.isFinite(reps) ? kg * reps : 0;
+  }
+
+  function setE1rm(set) {
+    const kg = parseNumber(set.kg);
+    const reps = parseNumber(set.reps);
+    return Number.isFinite(kg) && Number.isFinite(reps) && reps > 0 ? kg * (1 + reps / 30) : null;
+  }
+
+  function exerciseStats(program, row) {
+    const log = ensureExerciseLog(program, row);
+    const volumes = log.sets.map(setVolume);
+    const weights = log.sets.map((set) => parseNumber(set.kg)).filter(Number.isFinite);
+    const e1rms = log.sets.map(setE1rm).filter(Number.isFinite);
+    const completedSets = log.sets.filter((set) => set.done).length;
+    return {
+      volume: volumes.reduce((sum, value) => sum + value, 0),
+      bestLoad: weights.length ? Math.max(...weights) : null,
+      bestE1rm: e1rms.length ? Math.max(...e1rms) : null,
+      completedSets,
+      totalSets: positiveInteger(row.sets, 1),
+      complete: completedSets >= positiveInteger(row.sets, 1),
+    };
+  }
+
+  function sessionStats(program, week, session) {
+    const rows = getProgramRows(program, week, session);
+    const stats = rows.map((row) => exerciseStats(program, row));
+    const completedSets = stats.reduce((sum, item) => sum + item.completedSets, 0);
+    const totalSets = stats.reduce((sum, item) => sum + item.totalSets, 0);
+    return {
+      completedSets,
+      totalSets,
+      complete: totalSets > 0 && completedSets >= totalSets,
+      volume: stats.reduce((sum, item) => sum + item.volume, 0),
+      completedExercises: stats.filter((item) => item.complete).length,
+      totalExercises: stats.length,
+    };
+  }
+
+  function weekStats(program, week) {
+    const sessions = uniqueInOrder(getProgramRows(program, week).map((row) => row.session));
+    const sessionItems = sessions.map((session) => sessionStats(program, week, session));
+    const completedSets = sessionItems.reduce((sum, item) => sum + item.completedSets, 0);
+    const totalSets = sessionItems.reduce((sum, item) => sum + item.totalSets, 0);
+    return {
+      sessions: sessions.length,
+      completedSessions: sessionItems.filter((item) => item.complete).length,
+      completedSets,
+      totalSets,
+      adherence: totalSets ? completedSets / totalSets : 0,
+      volume: sessionItems.reduce((sum, item) => sum + item.volume, 0),
+    };
+  }
+
+  function latestPriorLog(program, row) {
+    for (let week = Number(row.week) - 1; week >= 1; week -= 1) {
+      const priorRow = program.rows.find((item) => Number(item.week) === week && item.id === row.id);
+      if (!priorRow) continue;
+      const log = ensureExerciseLog(program, priorRow);
+      if (log.sets.some((set) => set.kg !== "" || set.reps !== "" || set.done) || log.sourceRaw) {
+        return { week, row: priorRow, log, stats: exerciseStats(program, priorRow) };
+      }
+    }
+    return null;
+  }
+
+  function weekPrCount(program, week) {
+    if (Number(week) <= 1) return 0;
+    return getProgramRows(program, week).reduce((count, row) => {
+      const current = exerciseStats(program, row).bestE1rm;
+      if (!Number.isFinite(current)) return count;
+      let previousBest = null;
+      for (let priorWeek = 1; priorWeek < Number(week); priorWeek += 1) {
+        const priorRow = program.rows.find((item) => Number(item.week) === priorWeek && item.id === row.id);
+        if (!priorRow) continue;
+        const value = exerciseStats(program, priorRow).bestE1rm;
+        if (Number.isFinite(value)) previousBest = previousBest === null ? value : Math.max(previousBest, value);
+      }
+      return previousBest !== null && current > previousBest + 0.01 ? count + 1 : count;
+    }, 0);
+  }
+
+  function renderProgramSelector() {
+    const programs = Object.values(state.programs);
+    programSelect.innerHTML = programs
+      .map((program) => `<option value="${escapeHtml(program.id)}"${program.id === state.activeProgramId ? " selected" : ""}>${escapeHtml(program.name)}</option>`)
+      .join("");
+  }
+
+  function renderTabs(ui) {
+    root.querySelectorAll("[data-view]").forEach((button) => {
+      const active = button.dataset.view === ui.view;
+      button.setAttribute("aria-selected", active ? "true" : "false");
+    });
+  }
+
+  function renderWeekButtons(program, ui) {
+    const buttons = [];
+    for (let week = 1; week <= program.maxWeek; week += 1) {
+      const stats = weekStats(program, week);
+      const label = stats.completedSessions === stats.sessions && stats.sessions > 0 ? `W${week} ✓` : `W${week}`;
+      buttons.push(`<button class="btn" type="button" data-action="select-week" data-week="${week}" aria-pressed="${Number(ui.week) === week ? "true" : "false"}">${label}</button>`);
+    }
+    return buttons.join("");
+  }
+
+  function renderSessionButtons(program, ui) {
+    const sessions = uniqueInOrder(getProgramRows(program, ui.week).map((row) => row.session));
+    return sessions.map((session) => {
+      const stats = sessionStats(program, ui.week, session);
+      const label = stats.complete ? `${session} ✓` : session;
+      return `<button class="btn" type="button" data-action="select-session" data-session="${escapeHtml(session)}" aria-pressed="${ui.session === session ? "true" : "false"}">${escapeHtml(label)}</button>`;
+    }).join("");
+  }
+
+  function metricCard(label, value, context) {
+    return `<section class="card viz-stat"><div class="text-muted">${escapeHtml(label)}</div><div class="viz-stat-value">${escapeHtml(value)}</div>${context ? `<div class="text-small">${escapeHtml(context)}</div>` : ""}</section>`;
+  }
+
+  function renderExercise(program, row) {
+    const log = ensureExerciseLog(program, row);
+    const stats = exerciseStats(program, row);
+    const previous = latestPriorLog(program, row);
+    const previousText = previous
+      ? `W${previous.week}: ${previous.stats.bestLoad !== null ? `${formatNumber(previous.stats.bestLoad)} kg` : previous.log.sourceRaw || "carico registrato"}${previous.stats.bestE1rm !== null ? ` · e1RM ${formatNumber(previous.stats.bestE1rm)} kg` : ""}`
+      : log.sourceRaw
+        ? `Dato importato: ${log.sourceRaw}`
+        : "Nessuna seduta precedente registrata";
+    const setRows = log.sets.slice(0, positiveInteger(row.sets, 1)).map((set, index) => {
+      const checkboxId = `ftp-done-${row.week}-${row.id}-${index}`;
+      return `
+        <div class="ftp-set-row" data-set-row="${index}">
+          <div class="ftp-set-label">Serie ${index + 1}</div>
+          <label class="form-label ftp-set-field" data-set-field="kg">
+            Carico kg
+            <input class="form-control" type="text" inputmode="decimal" autocomplete="off" data-log-field="kg" data-exercise-id="${escapeHtml(row.id)}" data-set-index="${index}" value="${escapeHtml(set.kg)}" placeholder="0" />
+          </label>
+          <label class="form-label ftp-set-field" data-set-field="reps">
+            Ripetizioni
+            <input class="form-control" type="text" inputmode="numeric" autocomplete="off" data-log-field="reps" data-exercise-id="${escapeHtml(row.id)}" data-set-index="${index}" value="${escapeHtml(set.reps)}" placeholder="${escapeHtml(getRepRange(row.reps).min ?? "—")}" />
+          </label>
+          <label class="form-label ftp-set-field" data-set-field="rir">
+            RIR reale
+            <input class="form-control" type="text" inputmode="decimal" autocomplete="off" data-log-field="rir" data-exercise-id="${escapeHtml(row.id)}" data-set-index="${index}" value="${escapeHtml(set.rir)}" placeholder="${escapeHtml(row.rir || "—")}" />
+          </label>
+          <label class="form-check ftp-set-done" for="${checkboxId}">
+            <input id="${checkboxId}" class="form-check-input" type="checkbox" data-log-field="done" data-exercise-id="${escapeHtml(row.id)}" data-set-index="${index}"${set.done ? " checked" : ""} />
+            <span class="form-check-label">Fatta</span>
+          </label>
+        </div>`;
+    }).join("");
+    const info = [
+      `${row.sets}×${row.reps}`,
+      row.rir ? `RIR ${row.rir}` : "",
+      row.rest ? `Rec. ${row.rest}` : "",
+      row.muscle || "",
+    ].filter(Boolean).join(" · ");
+    const detailText = [row.technique, row.detail, row.weekNote].filter(Boolean).join(" ");
+
+    return `
+      <section class="ftp-exercise" data-exercise-section="${escapeHtml(row.id)}">
+        <div class="ftp-exercise-head">
+          <span class="ftp-exercise-index">${escapeHtml(row.order)}</span>
+          <div>
+            <div class="ftp-exercise-name">${escapeHtml(row.exercise)}</div>
+            <div class="ftp-ex-meta text-small">${escapeHtml(info)}</div>
+            <div class="ftp-previous text-small">${escapeHtml(previousText)}</div>
+          </div>
+          <button class="btn btn-ghost" type="button" data-action="copy-previous" data-exercise-id="${escapeHtml(row.id)}"${previous ? "" : " disabled"}>
+            <i data-lucide="copy" aria-hidden="true"></i>
+            Copia prima
+          </button>
+        </div>
+        ${detailText ? `<details class="ftp-details"><summary>Indicazioni</summary><div class="ftp-details-body text-small">${escapeHtml(detailText)}</div></details>` : ""}
+        <div class="ftp-sets">${setRows}</div>
+        <label class="form-label ftp-note-field">
+          Note esercizio
+          <textarea class="form-control" data-exercise-note="${escapeHtml(row.id)}" placeholder="Sensazioni, tecnica, macchina usata…">${escapeHtml(log.note)}</textarea>
+        </label>
+        <div class="ftp-inline-status text-small" data-exercise-status="${escapeHtml(row.id)}">${stats.complete ? `Completato · volume ${formatNumber(stats.volume, 0)} kg` : `${stats.completedSets}/${stats.totalSets} serie completate`}</div>
+      </section>`;
+  }
+
+  function renderWorkout(program, ui) {
+    const rows = getProgramRows(program, ui.week, ui.session);
+    const week = weekStats(program, ui.week);
+    const session = sessionStats(program, ui.week, ui.session);
+    const guidance = (program.guidance || []).find((item) => Number(item.week) === Number(ui.week));
+    const day = rows[0]?.day || "";
+    const prCount = weekPrCount(program, ui.week);
+    const exercises = rows.map((row) => renderExercise(program, row)).join("");
+
+    main.innerHTML = `
+      <section class="ftp-controls-row" aria-label="Selezione settimana">
+        <div>
+          <div class="ftp-section-title">Settimana</div>
+          <div class="ftp-week-list">${renderWeekButtons(program, ui)}</div>
+        </div>
+      </section>
+      ${guidance?.note ? `<section class="ftp-guidance"><i data-lucide="target" aria-hidden="true"></i><div><strong>Focus W${ui.week}</strong><div>${escapeHtml(guidance.note)}</div>${guidance.compound || guidance.isolation ? `<div class="text-small">RIR compound ${escapeHtml(guidance.compound || "—")} · isolamento ${escapeHtml(guidance.isolation || "—")}</div>` : ""}</div></section>` : ""}
+      <div class="viz-grid ftp-metrics">
+        ${metricCard("Sedute completate", `${week.completedSessions}/${week.sessions}`, `W${ui.week}`)}
+        ${metricCard("Volume registrato", `${formatNumber(week.volume, 0)} kg`, "Carico × ripetizioni")}
+        ${metricCard("Nuovi PR stimati", String(prCount), "Rispetto alle settimane precedenti")}
+      </div>
+      <section class="ftp-controls-row" aria-label="Selezione seduta">
+        <div>
+          <div class="ftp-section-title">Seduta</div>
+          <div class="ftp-session-list">${renderSessionButtons(program, ui)}</div>
+        </div>
+      </section>
+      <section class="ftp-session-head">
+        <div>
+          <div class="ftp-session-title">${escapeHtml(day)} · ${escapeHtml(ui.session)}</div>
+          <div class="ftp-session-meta text-small">${session.completedExercises}/${session.totalExercises} esercizi · ${session.completedSets}/${session.totalSets} serie · ${formatNumber(session.volume, 0)} kg</div>
+        </div>
+        <button class="btn" type="button" data-action="copy-session-previous"${Number(ui.week) <= 1 ? " disabled" : ""}>
+          <i data-lucide="clipboard-copy" aria-hidden="true"></i>
+          Copia carichi W${Math.max(1, ui.week - 1)}
+        </button>
+      </section>
+      <div>${exercises}</div>
+      <section class="ftp-session-footer">
+        <div class="ftp-inline-status" data-session-status>${session.complete ? "Seduta completata" : `${session.completedSets} di ${session.totalSets} serie completate`}</div>
+        <button class="btn btn-primary" type="button" data-action="toggle-session-complete">${session.complete ? "Riapri seduta" : "Completa seduta"}</button>
+      </section>`;
+  }
+
+  function seriesForExercise(program, id, metric) {
+    const values = [];
+    for (let week = 1; week <= program.maxWeek; week += 1) {
+      const row = program.rows.find((item) => Number(item.week) === week && item.id === id);
+      if (!row) {
+        values.push(null);
+        continue;
+      }
+      const stats = exerciseStats(program, row);
+      if (metric === "load") values.push(stats.bestLoad);
+      else if (metric === "volume") values.push(stats.volume > 0 ? stats.volume : null);
+      else values.push(stats.bestE1rm);
+    }
+    return values;
+  }
+
+  function metricInfo(metric) {
+    if (metric === "load") return { label: "Miglior carico", unit: "kg" };
+    if (metric === "volume") return { label: "Volume", unit: "kg" };
+    return { label: "e1RM stimato", unit: "kg" };
+  }
+
+  function renderLineChart(values, metric, exerciseName) {
+    const numeric = values.map((value, index) => ({ value, index })).filter((item) => Number.isFinite(item.value));
+    if (!numeric.length) return `<div class="ftp-empty">Inserisci carico e ripetizioni per vedere la curva di progresso.</div>`;
+    const width = 760;
+    const height = 280;
+    const left = 56;
+    const right = 24;
+    const top = 28;
+    const bottom = 46;
+    const innerWidth = width - left - right;
+    const innerHeight = height - top - bottom;
+    let minValue = Math.min(...numeric.map((item) => item.value));
+    let maxValue = Math.max(...numeric.map((item) => item.value));
+    if (maxValue === minValue) {
+      const padding = Math.max(1, maxValue * .08);
+      minValue -= padding;
+      maxValue += padding;
+    } else {
+      const padding = (maxValue - minValue) * .15;
+      minValue = Math.max(0, minValue - padding);
+      maxValue += padding;
+    }
+    const x = (index) => left + (values.length <= 1 ? innerWidth / 2 : index * innerWidth / (values.length - 1));
+    const y = (value) => top + (maxValue - value) * innerHeight / (maxValue - minValue);
+    const points = numeric.map((item) => `${x(item.index)},${y(item.value)}`).join(" ");
+    const ticks = [0, .5, 1].map((ratio) => {
+      const value = maxValue - ratio * (maxValue - minValue);
+      const yPos = top + ratio * innerHeight;
+      return `<line class="ftp-gridline" x1="${left}" y1="${yPos}" x2="${width - right}" y2="${yPos}"/><text class="ftp-tick text-small" x="${left - 8}" y="${yPos + 4}" text-anchor="end">${escapeHtml(formatNumber(value, metric === "volume" ? 0 : 1))}</text>`;
+    }).join("");
+    const xLabels = values.map((_, index) => `<text class="ftp-tick text-small" x="${x(index)}" y="${height - 17}" text-anchor="middle">W${index + 1}</text>`).join("");
+    const maxPoint = numeric.reduce((best, item) => item.value > best.value ? item : best, numeric[0]);
+    const lastPoint = numeric[numeric.length - 1];
+    const labels = [maxPoint, lastPoint]
+      .filter((item, index, list) => list.findIndex((candidate) => candidate.index === item.index) === index)
+      .map((item) => `<text class="ftp-value-label text-small" x="${x(item.index)}" y="${Math.max(14, y(item.value) - 10)}" text-anchor="middle">${escapeHtml(formatNumber(item.value, metric === "volume" ? 0 : 1))}</text>`)
+      .join("");
+    const circles = numeric.map((item) => `<circle class="ftp-point" cx="${x(item.index)}" cy="${y(item.value)}" r="5"><title>Settimana ${item.index + 1}: ${formatNumber(item.value, metric === "volume" ? 0 : 1)} ${metricInfo(metric).unit}</title></circle>`).join("");
+    const info = metricInfo(metric);
+    return `
+      <svg class="ftp-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(`${info.label} per ${exerciseName}, dalla settimana 1 alla ${values.length}`)}">
+        <title>${escapeHtml(`${info.label} · ${exerciseName}`)}</title>
+        <desc>Andamento settimanale espresso in ${escapeHtml(info.unit)}.</desc>
+        ${ticks}
+        <line class="ftp-axis" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"/>
+        <polyline class="ftp-line" points="${points}"/>
+        ${circles}
+        ${labels}
+        ${xLabels}
+      </svg>`;
+  }
+
+  function renderAdherenceChart(program) {
+    const values = Array.from({ length: program.maxWeek }, (_, index) => weekStats(program, index + 1).adherence * 100);
+    const width = 760;
+    const height = 220;
+    const left = 44;
+    const right = 18;
+    const top = 18;
+    const bottom = 42;
+    const innerWidth = width - left - right;
+    const innerHeight = height - top - bottom;
+    const gap = 10;
+    const barWidth = Math.max(8, (innerWidth - gap * (values.length - 1)) / values.length);
+    const bars = values.map((value, index) => {
+      const barHeight = innerHeight * value / 100;
+      const x = left + index * (barWidth + gap);
+      const y = top + innerHeight - barHeight;
+      return `<rect class="ftp-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}"><title>Settimana ${index + 1}: ${Math.round(value)}%</title></rect><text class="ftp-tick text-small" x="${x + barWidth / 2}" y="${height - 16}" text-anchor="middle">W${index + 1}</text>${value > 0 ? `<text class="ftp-value-label text-small" x="${x + barWidth / 2}" y="${Math.max(14, y - 7)}" text-anchor="middle">${Math.round(value)}%</text>` : ""}`;
+    }).join("");
+    return `
+      <svg class="ftp-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Percentuale di serie completate per settimana">
+        <title>Aderenza settimanale</title>
+        <desc>Percentuale delle serie previste segnate come completate.</desc>
+        <line class="ftp-gridline" x1="${left}" y1="${top}" x2="${width - right}" y2="${top}"/>
+        <text class="ftp-tick text-small" x="${left - 7}" y="${top + 4}" text-anchor="end">100%</text>
+        <line class="ftp-axis" x1="${left}" y1="${top + innerHeight}" x2="${width - right}" y2="${top + innerHeight}"/>
+        ${bars}
+      </svg>`;
+  }
+
+  function nextStepForExercise(program, exerciseIdValue) {
+    let latest = null;
+    for (let week = program.maxWeek; week >= 1; week -= 1) {
+      const row = program.rows.find((item) => Number(item.week) === week && item.id === exerciseIdValue);
+      if (!row) continue;
+      const log = ensureExerciseLog(program, row);
+      const recorded = log.sets.filter((set) => parseNumber(set.reps) !== null && parseNumber(set.kg) !== null);
+      if (recorded.length) {
+        latest = { week, row, log, recorded };
+        break;
+      }
+    }
+    if (!latest) return "Registra la prima seduta per ricevere un'indicazione sulla progressione.";
+    if (Number(latest.week) === program.maxWeek && (latest.row.weekNote || "").toLowerCase().includes("deload")) {
+      return "Mantieni il carico e rispetta il deload: niente cedimento e volume ridotto.";
+    }
+    const range = getRepRange(latest.row.reps);
+    const allAtTop = Number.isFinite(range.max) && latest.recorded.length >= positiveInteger(latest.row.sets, 1) && latest.recorded.every((set) => parseNumber(set.reps) >= range.max);
+    const rirValues = latest.recorded.map((set) => parseNumber(set.rir)).filter(Number.isFinite);
+    const averageRir = rirValues.length ? rirValues.reduce((sum, value) => sum + value, 0) / rirValues.length : null;
+    const target = getRirFloor(latest.row.rir);
+    if (allAtTop && (averageRir === null || target === null || averageRir >= target)) {
+      return "Top del range raggiunto: aumenta il carico del minimo incremento disponibile e riparti dal fondo del range.";
+    }
+    if (Number.isFinite(range.min) && latest.recorded.some((set) => parseNumber(set.reps) < range.min)) {
+      return "Il fondo del range non è stabile su tutte le serie: mantieni o riduci leggermente il carico.";
+    }
+    return "Mantieni il carico e prova ad aggiungere ripetizioni prima di aumentare il peso.";
+  }
+
+  function renderProgress(program, ui) {
+    const baseRows = getBaseRows(program);
+    const selectedRow = baseRows.find((row) => row.id === ui.exerciseId) || baseRows[0];
+    if (!selectedRow) {
+      main.innerHTML = `<div class="ftp-empty">Il programma non contiene esercizi leggibili.</div>`;
+      return;
+    }
+    ui.exerciseId = selectedRow.id;
+    const values = seriesForExercise(program, selectedRow.id, ui.metric);
+    const numeric = values.map((value, index) => ({ value, week: index + 1 })).filter((item) => Number.isFinite(item.value));
+    const first = numeric[0]?.value ?? null;
+    const last = numeric[numeric.length - 1]?.value ?? null;
+    const best = numeric.length ? Math.max(...numeric.map((item) => item.value)) : null;
+    const delta = Number.isFinite(first) && Number.isFinite(last) && first !== 0 ? (last / first - 1) * 100 : null;
+    const info = metricInfo(ui.metric);
+    const exerciseOptions = baseRows.map((row) => `<option value="${escapeHtml(row.id)}"${row.id === selectedRow.id ? " selected" : ""}>${escapeHtml(row.exercise)}</option>`).join("");
+
+    main.innerHTML = `
+      <section class="viz-controls ftp-controls-row" aria-label="Controlli del grafico">
+        <label class="form-label">
+          Esercizio
+          <select class="form-select" data-action="progress-exercise">${exerciseOptions}</select>
+        </label>
+        <label class="form-label">
+          Indicatore
+          <select class="form-select" data-action="progress-metric">
+            <option value="e1rm"${ui.metric === "e1rm" ? " selected" : ""}>e1RM stimato</option>
+            <option value="load"${ui.metric === "load" ? " selected" : ""}>Miglior carico</option>
+            <option value="volume"${ui.metric === "volume" ? " selected" : ""}>Volume</option>
+          </select>
+        </label>
+      </section>
+      <div class="viz-grid ftp-metrics">
+        ${metricCard("Primo valore", Number.isFinite(first) ? `${formatNumber(first, ui.metric === "volume" ? 0 : 1)} ${info.unit}` : "—", numeric[0] ? `W${numeric[0].week}` : "Nessun dato")}
+        ${metricCard("Valore migliore", Number.isFinite(best) ? `${formatNumber(best, ui.metric === "volume" ? 0 : 1)} ${info.unit}` : "—", selectedRow.exercise)}
+        ${metricCard("Variazione", Number.isFinite(delta) ? `${delta >= 0 ? "+" : ""}${formatNumber(delta, 1)}%` : "—", "Primo → ultimo dato")}
+      </div>
+      <section class="ftp-recommendation"><span class="ftp-section-title">Prossimo passo:</span> ${escapeHtml(nextStepForExercise(program, selectedRow.id))}</section>
+      <section class="ftp-chart-section">
+        <div class="ftp-section-title">${escapeHtml(info.label)} · ${escapeHtml(selectedRow.exercise)}</div>
+        <div class="ftp-chart-wrap">${renderLineChart(values, ui.metric, selectedRow.exercise)}</div>
+      </section>
+      <section class="ftp-chart-section">
+        <div class="ftp-section-title">Aderenza al programma</div>
+        <div class="ftp-inline-status text-small">Serie segnate come completate sul totale previsto</div>
+        <div class="ftp-chart-wrap">${renderAdherenceChart(program)}</div>
+      </section>`;
+  }
+
+  function renderProgram(program) {
+    const baseRows = getBaseRows(program);
+    const sessions = uniqueInOrder(baseRows.map((row) => row.session));
+    const totalSets = baseRows.reduce((sum, row) => sum + positiveInteger(row.sets, 1), 0);
+    const scheduleRows = sessions.map((session) => {
+      const rows = baseRows.filter((row) => row.session === session);
+      const focus = uniqueInOrder(rows.map((row) => row.muscle).filter(Boolean)).slice(0, 3).join(" · ");
+      const sets = rows.reduce((sum, row) => sum + positiveInteger(row.sets, 1), 0);
+      return `<div class="ftp-schedule-row"><div>${escapeHtml(rows[0]?.day || "")}</div><div class="ftp-session-title">${escapeHtml(session)}</div><div class="ftp-inline-status text-small">${escapeHtml(focus || `${rows.length} esercizi`)}</div><div>${sets} serie</div></div>`;
+    }).join("");
+    const exerciseGroups = sessions.map((session) => {
+      const rows = baseRows.filter((row) => row.session === session);
+      return `<details><summary>${escapeHtml(session)} · ${rows.length} esercizi</summary><ul>${rows.map((row) => `<li><span class="ftp-exercise-name">${escapeHtml(row.order)}. ${escapeHtml(row.exercise)}</span><div class="ftp-inline-status text-small">${escapeHtml(`${row.sets}×${row.reps}${row.rir ? ` · RIR ${row.rir}` : ""}${row.rest ? ` · recupero ${row.rest}` : ""}`)}</div></li>`).join("")}</ul></details>`;
+    }).join("");
+
+    main.innerHTML = `
+      <div class="viz-grid ftp-metrics">
+        ${metricCard("Durata", `${program.maxWeek} settimane`, program.startDate ? `Dal ${new Intl.DateTimeFormat("it-IT").format(new Date(`${program.startDate}T12:00:00`))}` : "Data iniziale non impostata")}
+        ${metricCard("Frequenza", `${sessions.length} sedute`, "Per settimana")}
+        ${metricCard("Volume previsto", `${totalSets} serie`, "Settimana base")}
+      </div>
+      <section class="ftp-program-section">
+        <div class="ftp-section-title">Impostazioni</div>
+        <div class="viz-controls ftp-controls-row">
+          <label class="form-label">
+            Nome programma
+            <input class="form-control" type="text" data-program-field="name" value="${escapeHtml(program.name)}" />
+          </label>
+          <label class="form-label">
+            Data di inizio
+            <input class="form-control" type="date" data-program-field="startDate" value="${escapeHtml(program.startDate || "")}" />
+          </label>
+        </div>
+        <div class="ftp-inline-status text-small">Fonte: ${escapeHtml(program.sourceFile || "Inserimento manuale")} · foglio: ${escapeHtml(program.sourceSheet || "—")}</div>
+      </section>
+      <section class="ftp-program-section">
+        <div class="ftp-section-title">Struttura settimanale</div>
+        <div>${scheduleRows}</div>
+      </section>
+      <section class="ftp-program-section ftp-program-exercises">
+        <div class="ftp-section-title">Esercizi e prescrizioni</div>
+        ${exerciseGroups}
+      </section>
+      <section class="ftp-program-section">
+        <div class="ftp-section-title">Dati e programmi</div>
+        <div class="ftp-data-actions">
+          <button class="btn btn-primary" type="button" data-action="import-excel"><i data-lucide="file-spreadsheet" aria-hidden="true"></i>Importa nuovo Excel</button>
+          <button class="btn" type="button" data-action="restore-backup"><i data-lucide="upload" aria-hidden="true"></i>Ripristina backup</button>
+          <button class="btn" type="button" data-action="reset-progress"><i data-lucide="rotate-ccw" aria-hidden="true"></i>Azzera progressi</button>
+          <button class="btn" type="button" data-action="delete-program"${Object.keys(state.programs).length <= 1 ? " disabled" : ""}><i data-lucide="trash-2" aria-hidden="true"></i>Elimina programma</button>
+        </div>
+      </section>`;
+  }
+
+  function render() {
+    const program = activeProgram();
+    if (!program) {
+      main.innerHTML = `<div class="ftp-empty">Importa un file Excel per iniziare.</div>`;
+      renderProgramSelector();
+      return;
+    }
+    const ui = ensureUi(program);
+    renderProgramSelector();
+    renderTabs(ui);
+    if (ui.view === "progress") renderProgress(program, ui);
+    else if (ui.view === "program") renderProgram(program, ui);
+    else renderWorkout(program, ui);
+    refreshIcons();
+  }
+
+  const HEADER_ALIASES = {
+    week: ["settimana", "week", "wk"],
+    day: ["giorno", "day"],
+    session: ["seduta", "sessione", "session", "workout", "allenamento"],
+    order: ["#", "ordine", "numero", "n"],
+    exercise: ["esercizio", "exercise", "movimento", "nome esercizio"],
+    muscle: ["gruppo primario", "gruppo muscolare", "muscolo", "muscle", "target muscolare"],
+    type: ["tipo", "type"],
+    sets: ["serie target", "serie", "sets", "set"],
+    reps: ["reps target", "ripetizioni target", "ripetizioni", "reps"],
+    rir: ["rir target", "rir base", "rir", "rpe target", "rpe"],
+    rest: ["recupero", "rest", "pausa"],
+    weight: ["peso kg", "carico kg", "peso", "carico", "weight kg", "weight", "load"],
+    actualRir: ["rir reale", "rir effettivo", "actual rir"],
+    status: ["stato", "status"],
+    notes: ["note esecutive motivazione", "perche scelto esecuzione", "note", "notes", "motivazione"],
+    technique: ["tecnica speciale", "tecnica", "special technique"],
+    guidance: ["cosa cambia", "indicazione", "focus settimana", "week focus"],
+    compoundRir: ["rir compound", "compound rir"],
+    isolationRir: ["rir isolamento", "isolation rir"],
+  };
+
+  function headerColumn(headers, aliases) {
+    const normalized = headers.map(normalizeText);
+    for (const alias of aliases) {
+      const exact = normalized.indexOf(alias);
+      if (exact >= 0) return exact;
+    }
+    for (const alias of aliases) {
+      if (alias.length <= 2) continue;
+      const partial = normalized.findIndex((header) => header && (header.includes(alias) || alias.includes(header)));
+      if (partial >= 0) return partial;
+    }
+    return -1;
+  }
+
+  function mapHeader(headers) {
+    const mapping = {};
+    Object.entries(HEADER_ALIASES).forEach(([key, aliases]) => {
+      mapping[key] = headerColumn(headers, aliases);
+    });
+    mapping.repColumns = headers.map((header, index) => {
+      const normalized = normalizeText(header);
+      const match = normalized.match(/^(?:reps|ripetizioni) s? ?(\d+)$/);
+      return match ? { index, setIndex: Number(match[1]) - 1 } : null;
+    }).filter(Boolean);
+    mapping.weekLoadColumns = headers.map((header, index) => {
+      const normalized = normalizeText(header);
+      const match = normalized.match(/^w(?:eek)? ?(\d+)(?: kg| peso| carico)?$/);
+      return match ? { index, week: Number(match[1]) } : null;
+    }).filter(Boolean);
+    return mapping;
+  }
+
+  function scoreHeader(headers, mapping) {
+    let score = mapping.exercise >= 0 ? 8 : 0;
+    if (mapping.week >= 0) score += 5;
+    if (mapping.day >= 0) score += 2;
+    if (mapping.session >= 0) score += 2;
+    if (mapping.sets >= 0) score += 2;
+    if (mapping.reps >= 0) score += 2;
+    if (mapping.rir >= 0) score += 1;
+    if (mapping.weight >= 0) score += 1;
+    if (mapping.weekLoadColumns.length) score += 2;
+    if (headers.filter((cell) => cell !== null && cell !== "").length < 3) score -= 3;
+    return score;
+  }
+
+  function findTables(workbook) {
+    const candidates = [];
+    workbook.SheetNames.forEach((sheetName, sheetIndex) => {
+      const worksheet = workbook.Sheets[sheetName];
+      const rows = window.XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, raw: false });
+      let best = null;
+      rows.slice(0, 60).forEach((headers, headerIndex) => {
+        if (!Array.isArray(headers)) return;
+        const mapping = mapHeader(headers);
+        const score = scoreHeader(headers, mapping);
+        if (!best || score > best.score) best = { sheetName, sheetIndex, rows, headerIndex, headers, mapping, score };
+      });
+      if (best && best.mapping.exercise >= 0 && best.score >= 10) candidates.push(best);
+    });
+    return candidates;
+  }
+
+  function cellValue(row, index) {
+    return index >= 0 && Array.isArray(row) ? row[index] : null;
+  }
+
+  function parseTableRows(candidate) {
+    const result = [];
+    const mapping = candidate.mapping;
+    let previousWeek = null;
+    let previousDay = "";
+    let previousSession = "";
+    candidate.rows.slice(candidate.headerIndex + 1).forEach((row, relativeIndex) => {
+      const exercise = String(cellValue(row, mapping.exercise) ?? "").trim();
+      if (!exercise || normalizeText(exercise) === "esercizio" || normalizeText(exercise) === "exercise") return;
+      const rawWeek = cellValue(row, mapping.week);
+      const parsedWeek = parseNumber(rawWeek);
+      if (Number.isFinite(parsedWeek)) previousWeek = Math.round(parsedWeek);
+      const dayValue = String(cellValue(row, mapping.day) ?? "").trim();
+      const sessionValue = String(cellValue(row, mapping.session) ?? "").trim();
+      if (dayValue) previousDay = dayValue;
+      if (sessionValue) previousSession = sessionValue;
+      const rowData = {
+        week: mapping.week >= 0 ? previousWeek : null,
+        day: dayValue || previousDay || sessionValue || "Seduta",
+        session: sessionValue || previousSession || dayValue || "Allenamento",
+        order: String(cellValue(row, mapping.order) ?? relativeIndex + 1).trim(),
+        exercise,
+        muscle: String(cellValue(row, mapping.muscle) ?? "").trim(),
+        type: String(cellValue(row, mapping.type) ?? "").trim(),
+        sets: positiveInteger(cellValue(row, mapping.sets), 3),
+        reps: String(cellValue(row, mapping.reps) ?? "").trim() || "8-12",
+        rir: String(cellValue(row, mapping.rir) ?? "").trim(),
+        rest: String(cellValue(row, mapping.rest) ?? "").trim(),
+        technique: String(cellValue(row, mapping.technique) ?? "").trim(),
+        detail: String(cellValue(row, mapping.notes) ?? "").trim(),
+        actualWeight: cellValue(row, mapping.weight),
+        actualRir: cellValue(row, mapping.actualRir),
+        status: String(cellValue(row, mapping.status) ?? "").trim(),
+        rawRow: row,
+      };
+      rowData.repValues = mapping.repColumns.map((entry) => ({ setIndex: entry.setIndex, value: cellValue(row, entry.index) }));
+      result.push(rowData);
+    });
+    return result;
+  }
+
+  function detectDuration(workbook, candidates) {
+    let maxWeek = 0;
+    candidates.forEach((candidate) => {
+      candidate.mapping.weekLoadColumns.forEach((entry) => { maxWeek = Math.max(maxWeek, entry.week); });
+      parseTableRows(candidate).forEach((row) => {
+        if (Number.isFinite(row.week)) maxWeek = Math.max(maxWeek, row.week);
+      });
+    });
+    workbook.SheetNames.forEach((sheetName) => {
+      const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: null, raw: false });
+      rows.slice(0, 15).forEach((row) => {
+        row.slice(0, 12).forEach((cell) => {
+          const match = String(cell ?? "").match(/(\d{1,2})\s*(?:settimane|settimana|weeks|week)/i);
+          if (match) maxWeek = Math.max(maxWeek, Number(match[1]));
+        });
+      });
+    });
+    return Math.min(52, Math.max(1, maxWeek || 8));
+  }
+
+  function buildMetadata(candidates) {
+    const metadata = new Map();
+    candidates.forEach((candidate) => {
+      parseTableRows(candidate).forEach((row) => {
+        const key = normalizeText(row.exercise);
+        if (!key) return;
+        const current = metadata.get(key) || {};
+        ["muscle", "type", "rest", "technique", "detail"].forEach((field) => {
+          if (!current[field] && row[field]) current[field] = row[field];
+        });
+        metadata.set(key, current);
+      });
+    });
+    return metadata;
+  }
+
+  function extractGuidance(workbook, maxWeek) {
+    const guidance = [];
+    workbook.SheetNames.forEach((sheetName) => {
+      const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: null, raw: false });
+      rows.slice(0, 60).forEach((headers, headerIndex) => {
+        if (!Array.isArray(headers)) return;
+        const mapping = mapHeader(headers);
+        if (mapping.week < 0 || mapping.guidance < 0) return;
+        rows.slice(headerIndex + 1, headerIndex + 1 + maxWeek + 4).forEach((row) => {
+          const week = parseNumber(cellValue(row, mapping.week));
+          const note = String(cellValue(row, mapping.guidance) ?? "").trim();
+          if (!Number.isFinite(week) || !note || week < 1 || week > maxWeek) return;
+          if (!guidance.some((item) => Number(item.week) === Number(week))) {
+            guidance.push({
+              week: Math.round(week),
+              compound: String(cellValue(row, mapping.compoundRir) ?? "").trim(),
+              isolation: String(cellValue(row, mapping.isolationRir) ?? "").trim(),
+              note,
+            });
+          }
+        });
+      });
+    });
+    return guidance.sort((a, b) => a.week - b.week);
+  }
+
+  function parseLoadPattern(value, setCount) {
+    const raw = String(value ?? "").trim();
+    if (!raw) return [];
+    const normalized = raw.replace(/,/g, ".");
+    const weights = [];
+    const pairRegex = /(\d+(?:\.\d+)?)\s*(?:kg\s*)?(?:x\s*(?:side|lato)\s*)?x\s*(\d+)/gi;
+    let match;
+    while ((match = pairRegex.exec(normalized)) !== null) {
+      const weight = Number(match[1]);
+      const count = Math.min(12, Number(match[2]));
+      if (Number.isFinite(weight) && Number.isFinite(count)) {
+        for (let index = 0; index < count; index += 1) weights.push(weight);
+      }
+    }
+    if (!weights.length) {
+      const single = parseNumber(normalized);
+      if (Number.isFinite(single)) {
+        for (let index = 0; index < setCount; index += 1) weights.push(single);
+      }
+    }
+    return weights.slice(0, setCount);
+  }
+
+  function seedFromWeeklyColumns(candidates, programRows) {
+    const seeds = [];
+    candidates.forEach((candidate) => {
+      if (!candidate.mapping.weekLoadColumns.length) return;
+      const parsedRows = parseTableRows(candidate);
+      parsedRows.forEach((parsed) => {
+        candidate.mapping.weekLoadColumns.forEach((entry) => {
+          const raw = cellValue(parsed.rawRow, entry.index);
+          if (raw === null || raw === undefined || String(raw).trim() === "") return;
+          const programRow = programRows.find((row) => Number(row.week) === entry.week && normalizeText(row.exercise) === normalizeText(parsed.exercise));
+          if (!programRow) return;
+          const weights = parseLoadPattern(raw, positiveInteger(programRow.sets, 1));
+          seeds.push({ week: entry.week, exerciseId: programRow.id, exercise: parsed.exercise, weights, raw: String(raw) });
+        });
+      });
+    });
+    return seeds;
+  }
+
+  function seedFromDiary(parsedRows, programRows) {
+    const seeds = [];
+    parsedRows.forEach((parsed) => {
+      if (!Number.isFinite(parsed.week)) return;
+      const programRow = programRows.find((row) => Number(row.week) === Number(parsed.week) && normalizeText(row.exercise) === normalizeText(parsed.exercise));
+      if (!programRow) return;
+      const setCount = positiveInteger(programRow.sets, 1);
+      const sharedWeight = parseNumber(parsed.actualWeight);
+      const actualRir = parseNumber(parsed.actualRir);
+      const completedStatus = /complet|fatto|done|eseguito/i.test(parsed.status);
+      const sets = Array.from({ length: setCount }, (_, index) => {
+        const repEntry = parsed.repValues.find((entry) => entry.setIndex === index);
+        const reps = repEntry ? parseNumber(repEntry.value) : null;
+        return {
+          kg: Number.isFinite(sharedWeight) ? String(sharedWeight) : "",
+          reps: Number.isFinite(reps) ? String(reps) : "",
+          rir: Number.isFinite(actualRir) ? String(actualRir) : "",
+          done: completedStatus || Number.isFinite(reps),
+        };
+      });
+      if (sets.some((set) => set.kg || set.reps || set.rir || set.done)) {
+        seeds.push({ week: parsed.week, exerciseId: programRow.id, exercise: parsed.exercise, sets });
+      }
+    });
+    return seeds;
+  }
+
+  function cleanProgramName(fileName, maxWeek) {
+    const base = String(fileName || "Nuovo programma")
+      .replace(/\.(xlsx|xlsm|xlsb|xls)$/i, "")
+      .replace(/\(\d+\)\s*$/g, "")
+      .replace(/[._-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return `${base || "Programma fitness"} · ${maxWeek} sett.`;
+  }
+
+  function extractProgram(workbook, fileName) {
+    const candidates = findTables(workbook);
+    if (!candidates.length) throw new Error("Non trovo una tabella con la colonna Esercizio.");
+    const maxWeek = detectDuration(workbook, candidates);
+    const metadata = buildMetadata(candidates);
+    const ranked = candidates.map((candidate) => {
+      const parsed = parseTableRows(candidate);
+      const weeklyRows = parsed.filter((row) => Number.isFinite(row.week));
+      const exerciseCount = parsed.filter((row) => row.exercise).length;
+      return { candidate, parsed, score: candidate.score + weeklyRows.length * .05 + exerciseCount * .01 + (weeklyRows.length ? 12 : 0) };
+    }).sort((a, b) => b.score - a.score);
+    const selected = ranked[0];
+    if (!selected.parsed.length) throw new Error("La tabella trovata non contiene esercizi utilizzabili.");
+
+    let programRows = [];
+    if (selected.parsed.some((row) => Number.isFinite(row.week))) {
+      programRows = selected.parsed.filter((row) => Number.isFinite(row.week) && row.week >= 1 && row.week <= maxWeek);
+    } else {
+      for (let week = 1; week <= maxWeek; week += 1) {
+        selected.parsed.forEach((row) => programRows.push({ ...row, week }));
+      }
+    }
+
+    programRows = programRows.map((row) => {
+      const meta = metadata.get(normalizeText(row.exercise)) || {};
+      const clean = {
+        week: Math.round(row.week),
+        day: row.day || row.session || "Seduta",
+        session: row.session || row.day || "Allenamento",
+        order: row.order,
+        exercise: row.exercise,
+        muscle: row.muscle || meta.muscle || "",
+        type: row.type || meta.type || "",
+        sets: positiveInteger(row.sets, 3),
+        reps: row.reps || "8-12",
+        rir: row.rir || "",
+        rest: row.rest || meta.rest || "",
+        technique: row.technique || meta.technique || "",
+        detail: row.detail || meta.detail || "",
+        weekNote: row.detail && selected.candidate.mapping.week >= 0 ? row.detail : "",
+      };
+      clean.id = exerciseId(clean);
+      return clean;
+    });
+
+    const uniqueRows = [];
+    const rowKeys = new Set();
+    programRows.forEach((row) => {
+      const key = `${row.week}|${row.id}`;
+      if (!rowKeys.has(key)) {
+        rowKeys.add(key);
+        uniqueRows.push(row);
+      }
+    });
+    if (!uniqueRows.length) throw new Error("Nessun esercizio valido trovato nel file.");
+    const actualMaxWeek = Math.max(...uniqueRows.map((row) => Number(row.week)).filter(Number.isFinite));
+    const guidance = extractGuidance(workbook, actualMaxWeek);
+    const id = programId(uniqueRows, actualMaxWeek);
+    const program = {
+      id,
+      modelVersion: 1,
+      name: cleanProgramName(fileName, actualMaxWeek),
+      sourceFile: fileName,
+      sourceSheet: selected.candidate.sheetName,
+      maxWeek: actualMaxWeek,
+      startDate: "",
+      createdAt: new Date().toISOString(),
+      guidance,
+      rows: uniqueRows,
+    };
+    const seeds = [
+      ...seedFromDiary(selected.parsed, uniqueRows),
+      ...seedFromWeeklyColumns(candidates, uniqueRows),
+    ];
+    return { program, seeds };
+  }
+
+  async function importExcelFile(file) {
+    if (!file) return;
+    if (!window.XLSX) {
+      showToast("Il lettore Excel non è disponibile. Verifica la connessione e riprova.", true);
+      return;
+    }
+    try {
+      showToast("Lettura del programma in corso…");
+      const data = await file.arrayBuffer();
+      const workbook = window.XLSX.read(data, { type: "array", cellDates: true });
+      const { program, seeds } = extractProgram(workbook, file.name);
+      const existing = state.programs[program.id];
+      if (existing) {
+        state.programs[program.id] = {
+          ...program,
+          name: existing.name || program.name,
+          startDate: existing.startDate || "",
+          createdAt: existing.createdAt || program.createdAt,
+        };
+      } else {
+        state.programs[program.id] = program;
+      }
+      applySeedLogs(state.programs[program.id], seeds, true);
+      state.activeProgramId = program.id;
+      ensureUi(state.programs[program.id]);
+      saveState();
+      render();
+      const sessions = uniqueInOrder(getBaseRows(state.programs[program.id]).map((row) => row.session)).length;
+      const exercises = getBaseRows(state.programs[program.id]).length;
+      showToast(existing
+        ? `Programma aggiornato: ${program.maxWeek} settimane, ${sessions} sedute, ${exercises} esercizi. Progressi conservati.`
+        : `Programma importato: ${program.maxWeek} settimane, ${sessions} sedute, ${exercises} esercizi.`
+      );
+    } catch (error) {
+      showToast(`Importazione non riuscita: ${error.message || "formato non riconosciuto"}`, true);
+    } finally {
+      excelInput.value = "";
+    }
+  }
+
+  function downloadJson() {
+    const payload = {
+      kind: "fitness-progress-tracker-backup",
+      exportedAt: new Date().toISOString(),
+      data: state,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `fitness-progress-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    showToast("Backup creato.");
+  }
+
+  async function restoreBackup(file) {
+    if (!file) return;
+    try {
+      const payload = JSON.parse(await file.text());
+      if (payload?.kind !== "fitness-progress-tracker-backup" || !payload.data?.programs || !payload.data?.logs) {
+        throw new Error("backup non riconosciuto");
+      }
+      if (!window.confirm("Ripristinare questo backup? I dati attuali verranno sostituiti.")) return;
+      state = {
+        ...emptyState(),
+        ...payload.data,
+        programs: payload.data.programs,
+        logs: payload.data.logs,
+        ui: payload.data.ui || {},
+      };
+      if (!state.programs[state.activeProgramId]) state.activeProgramId = Object.keys(state.programs)[0] || null;
+      saveState();
+      render();
+      showToast("Backup ripristinato.");
+    } catch (error) {
+      showToast(`Ripristino non riuscito: ${error.message || "file non valido"}`, true);
+    } finally {
+      restoreInput.value = "";
+    }
+  }
+
+  function copyPreviousExercise(program, ui, exerciseIdValue) {
+    const row = program.rows.find((item) => Number(item.week) === Number(ui.week) && item.id === exerciseIdValue);
+    if (!row) return false;
+    const previous = latestPriorLog(program, row);
+    if (!previous) return false;
+    const current = ensureExerciseLog(program, row);
+    current.sets.slice(0, positiveInteger(row.sets, 1)).forEach((set, index) => {
+      const source = previous.log.sets[index] || previous.log.sets[previous.log.sets.length - 1];
+      if (!source) return;
+      set.kg = source.kg;
+      set.reps = "";
+      set.rir = "";
+      set.done = false;
+    });
+    current.sourceRaw = previous.log.sourceRaw || current.sourceRaw;
+    return true;
+  }
+
+  function updateExerciseInline(program, row) {
+    const status = root.querySelector(`[data-exercise-status="${row.id}"]`);
+    if (!status) return;
+    const stats = exerciseStats(program, row);
+    status.textContent = stats.complete
+      ? `Completato · volume ${formatNumber(stats.volume, 0)} kg`
+      : `${stats.completedSets}/${stats.totalSets} serie completate`;
+    const ui = ensureUi(program);
+    const session = sessionStats(program, ui.week, ui.session);
+    const sessionStatus = root.querySelector("[data-session-status]");
+    if (sessionStatus) sessionStatus.textContent = session.complete
+      ? "Seduta completata"
+      : `${session.completedSets} di ${session.totalSets} serie completate`;
+  }
+
+  function handleAction(button) {
+    const action = button.dataset.action;
+    const program = activeProgram();
+    if (!program) return;
+    const ui = ensureUi(program);
+    if (action === "select-week") {
+      ui.week = Number(button.dataset.week);
+      ui.session = uniqueInOrder(getProgramRows(program, ui.week).map((row) => row.session))[0] || "";
+      saveState();
+      render();
+      return;
+    }
+    if (action === "select-session") {
+      ui.session = button.dataset.session || "";
+      saveState();
+      render();
+      return;
+    }
+    if (action === "copy-previous") {
+      if (copyPreviousExercise(program, ui, button.dataset.exerciseId)) {
+        saveState();
+        render();
+        showToast("Carico precedente copiato. Ripetizioni e RIR restano da compilare.");
+      }
+      return;
+    }
+    if (action === "copy-session-previous") {
+      let copied = 0;
+      getProgramRows(program, ui.week, ui.session).forEach((row) => {
+        if (copyPreviousExercise(program, ui, row.id)) copied += 1;
+      });
+      saveState();
+      render();
+      showToast(copied ? `Carichi copiati per ${copied} esercizi.` : "Nessun carico precedente da copiare.", !copied);
+      return;
+    }
+    if (action === "toggle-session-complete") {
+      const rows = getProgramRows(program, ui.week, ui.session);
+      const currentStats = sessionStats(program, ui.week, ui.session);
+      if (currentStats.complete) {
+        rows.forEach((row) => ensureExerciseLog(program, row).sets.slice(0, positiveInteger(row.sets, 1)).forEach((set) => { set.done = false; }));
+        saveState();
+        render();
+        showToast("Seduta riaperta.");
+        return;
+      }
+      const missing = rows.some((row) => ensureExerciseLog(program, row).sets.slice(0, positiveInteger(row.sets, 1)).some((set) => parseNumber(set.kg) === null || parseNumber(set.reps) === null));
+      if (missing) {
+        showToast("Compila carico e ripetizioni di tutte le serie prima di completare la seduta.", true);
+        return;
+      }
+      rows.forEach((row) => ensureExerciseLog(program, row).sets.slice(0, positiveInteger(row.sets, 1)).forEach((set) => { set.done = true; }));
+      saveState();
+      render();
+      showToast("Seduta completata e salvata.");
+      return;
+    }
+    if (action === "import-excel") {
+      excelInput.click();
+      return;
+    }
+    if (action === "restore-backup") {
+      restoreInput.click();
+      return;
+    }
+    if (action === "reset-progress") {
+      if (!window.confirm(`Azzerare tutti i progressi di “${program.name}”?`)) return;
+      state.logs[program.id] = {};
+      saveState();
+      render();
+      showToast("Progressi azzerati.");
+      return;
+    }
+    if (action === "delete-program") {
+      if (Object.keys(state.programs).length <= 1) return;
+      if (!window.confirm(`Eliminare “${program.name}” e i suoi progressi?`)) return;
+      delete state.programs[program.id];
+      delete state.logs[program.id];
+      delete state.ui[program.id];
+      state.activeProgramId = Object.keys(state.programs)[0] || null;
+      saveState();
+      render();
+      showToast("Programma eliminato.");
+    }
+  }
+
+  root.addEventListener("click", (event) => {
+    const viewButton = event.target.closest("[data-view]");
+    if (viewButton && root.contains(viewButton)) {
+      const program = activeProgram();
+      if (!program) return;
+      ensureUi(program).view = viewButton.dataset.view;
+      saveState();
+      render();
+      return;
+    }
+    const actionButton = event.target.closest("[data-action]");
+    if (actionButton && root.contains(actionButton)) handleAction(actionButton);
+  });
+
+  root.addEventListener("input", (event) => {
+    const program = activeProgram();
+    if (!program) return;
+    const ui = ensureUi(program);
+    const logInput = event.target.closest("[data-log-field]");
+    if (logInput) {
+      const row = program.rows.find((item) => Number(item.week) === Number(ui.week) && item.id === logInput.dataset.exerciseId);
+      if (!row) return;
+      const log = ensureExerciseLog(program, row);
+      const set = log.sets[Number(logInput.dataset.setIndex)];
+      if (!set) return;
+      const field = logInput.dataset.logField;
+      if (field !== "done") set[field] = logInput.value;
+      saveState();
+      updateExerciseInline(program, row);
+      return;
+    }
+    const note = event.target.closest("[data-exercise-note]");
+    if (note) {
+      const row = program.rows.find((item) => Number(item.week) === Number(ui.week) && item.id === note.dataset.exerciseNote);
+      if (!row) return;
+      ensureExerciseLog(program, row).note = note.value;
+      saveState();
+    }
+  });
+
+  root.addEventListener("change", (event) => {
+    const program = activeProgram();
+    const ui = program ? ensureUi(program) : null;
+    const logInput = event.target.closest("[data-log-field]");
+    if (logInput && program && ui) {
+      const row = program.rows.find((item) => Number(item.week) === Number(ui.week) && item.id === logInput.dataset.exerciseId);
+      if (!row) return;
+      const set = ensureExerciseLog(program, row).sets[Number(logInput.dataset.setIndex)];
+      if (!set) return;
+      if (logInput.dataset.logField === "done") set.done = logInput.checked;
+      else set[logInput.dataset.logField] = logInput.value;
+      saveState();
+      updateExerciseInline(program, row);
+      return;
+    }
+    const progressExercise = event.target.closest('[data-action="progress-exercise"]');
+    if (progressExercise && program && ui) {
+      ui.exerciseId = progressExercise.value;
+      saveState();
+      render();
+      return;
+    }
+    const progressMetric = event.target.closest('[data-action="progress-metric"]');
+    if (progressMetric && program && ui) {
+      ui.metric = progressMetric.value;
+      saveState();
+      render();
+      return;
+    }
+    const programField = event.target.closest("[data-program-field]");
+    if (programField && program) {
+      const field = programField.dataset.programField;
+      if (field === "name") program.name = programField.value.trim() || program.name;
+      if (field === "startDate") program.startDate = programField.value;
+      saveState();
+      render();
+      showToast("Impostazioni salvate.");
+    }
+  });
+
+  programSelect.addEventListener("change", () => {
+    if (!state.programs[programSelect.value]) return;
+    state.activeProgramId = programSelect.value;
+    ensureUi(state.programs[state.activeProgramId]);
+    saveState();
+    render();
+  });
+
+  root.querySelector("#ftp-import-button").addEventListener("click", () => excelInput.click());
+  root.querySelector("#ftp-backup-button").addEventListener("click", downloadJson);
+  excelInput.addEventListener("change", () => importExcelFile(excelInput.files?.[0]));
+  restoreInput.addEventListener("change", () => restoreBackup(restoreInput.files?.[0]));
+
+  root.__fitnessTrackerTest = {
+    extractProgram,
+    getState: () => state,
+    render,
+  };
+
+  initializeDefault();
+  render();
+})();
+</script>
+
+<script id="codex-visualization-floating-ui-core" src="https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js"></script>
+<script id="codex-visualization-floating-ui-dom" src="https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js"></script>
+<script id="codex-visualization-lucide" async src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js"></script>
+<script id="codex-visualization-tooltip">/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-call, typescript/no-unsafe-return */
+// Runs inside the visualization sandbox, not the host webview.
+(() => {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set(["top", "right", "bottom", "left"]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+
+  const getTrigger = (target) =>
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest("[data-tooltip]")
+      : null;
+  const containsTarget = (trigger, target) =>
+    target?.nodeType != null && trigger.contains(target);
+  const getContent = (trigger) =>
+    trigger.getAttribute("data-tooltip")?.trim() ?? "";
+  const getPlacement = (trigger) => {
+    const placement = trigger.getAttribute("data-tooltip-placement");
+    return tooltipPlacements.has(placement) ? placement : "top";
+  };
+  const getTooltip = () => {
+    if (tooltip == null) {
+      tooltip = document.createElement("div");
+      tooltip.id = tooltipId;
+      tooltip.className = "tooltip";
+      tooltip.setAttribute("role", "tooltip");
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) => {
+    const ids = new Set(
+      (trigger.getAttribute("aria-describedby") ?? "")
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute("aria-describedby");
+    } else {
+      trigger.setAttribute("aria-describedby", [...ids].join(" "));
+    }
+  };
+  const clearOpenTimeout = () => {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) => {
+    clearOpenTimeout();
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) => {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              "--tooltip-available-width",
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              "--tooltip-available-height",
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: "fixed",
+    })
+      .then(({ x, y }) => {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = "visible";
+      })
+      .catch(() => {
+        if (activeTrigger === trigger && request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) => {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = "hidden";
+    floating.style.transform = "translate(0, 0)";
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () => {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) => {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() < skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() => {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) => {
+    if (event.pointerType === "touch") {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handleLeave = (event) => {
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) => {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(":focus-visible")) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape") {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) => {
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () => {
+    closeTooltip(false);
+    document.removeEventListener("pointerover", handlePointerOpen);
+    document.removeEventListener("pointerout", handleLeave);
+    document.removeEventListener("focusin", handleFocusIn);
+    document.removeEventListener("focusout", handleLeave);
+    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener("contextmenu", handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener("pointerover", handlePointerOpen);
+  document.addEventListener("pointerout", handleLeave);
+  document.addEventListener("focusin", handleFocusIn);
+  document.addEventListener("focusout", handleLeave);
+  document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("contextmenu", handleContextMenu);
+  window.addEventListener("pagehide", destroy, { once: true });
+})();
+</script>
+<script id="codex-visualization-lucide-initialization">(() => {
+  const initialize = () => {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById("codex-visualization-lucide")
+    ?.addEventListener("load", initialize, { once: true });
+})();
+</script>
+</body>
+</html>
